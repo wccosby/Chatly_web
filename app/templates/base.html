@@ -27,10 +27,6 @@
         <!--Import jQuery before materialize.js-->
         <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
         <script type="text/javascript" src="static/js/materialize.min.js"></script>
-        {% if logged_in %}
-            {% block content %}{% endblock %}
-        {% else %}
-            {% block login %}{% endblock %}
-        {% endif %}
+        {% block content %}{% endblock %}
     </body>
 </html>

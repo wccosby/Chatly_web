@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, flash, redirect
+from flask import Flask, jsonify, request, render_template, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from app import app
@@ -7,6 +7,7 @@ from .models import User, db
 
 from flask_bcrypt import Bcrypt
 login_manager = LoginManager()
+login_manager.init_app(app)
 bcrypt = Bcrypt()
 
 @login_manager.user_loader
@@ -16,13 +17,18 @@ def user_loader(user_id):
     """
     return User.query.get(user_id)
 
+@login_manager.unauthorized_handler
+def unauthorized_callback():
+    return redirect(url_for("login"))
+
+
 @app.route('/login', methods=["GET","POST"])
 def login():
     """
     For GET requests, display the login form.
     For POSTS, login the current user by processing the form.
     """
-    # print db
+    print db
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.get(form.email.data)
@@ -32,12 +38,13 @@ def login():
                 db.session.add(user)
                 db.session.commit()
                 login_user(user, remember=True)
-                return redirect(url_for("app.home"))
+                return redirect(url_for("index"))
     return render_template("login.html",form=form)
 
 # Homepage
 @app.route("/")
 @app.route("/index")
+@login_required
 def index():
     """
     Homepage: serve our visualization page, index.html

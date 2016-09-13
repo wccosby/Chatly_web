@@ -1,4 +1,12 @@
 {% extends "base.html" %}
-{% block login %}
-<h2> You need to be logged in </h2>
+{% block content %}
+<div class="container login-forms">
+    <form method="POST" action="/login">
+        {{ form.csrf_token }}
+        {{ form.name.label }} {{ form.email(size=20) }}
+        {{ form.email.label }} {{ form.email(size=20) }}
+        {{ form.password.label }} {{ form.password(size=20) }}
+        <input type="submit" value="Login">
+    </form>
+</div>
 {% endblock %}

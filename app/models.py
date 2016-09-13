@@ -13,7 +13,9 @@ class User(db.Model):
     """
     __tablename__ = 'user'
 
-    email = db.Column(db.String, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    email = db.Column(db.String, unique=True)
     password = db.Column(db.String)
     authenticated = db.Column(db.Boolean, default=False)
 
@@ -32,3 +34,35 @@ class User(db.Model):
     def is_anonymous(self):
         """False, as anonymous users aren't supported."""
         return False
+
+    def __repr__(self):
+        return '<User %r>' % (self.name)
+
+
+class Story(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    story = db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    '''
+    handles how the db entry is printed if it needs to be
+    '''
+    def __repr__(self):
+        return '<Post %r>' % (self.body)
+
+class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question = db.Column(db.String)
+    answer = db.Column(db.String)
+    story_id = db.Column(db.Integer, db.ForeignKey('story.id'))
+
+    def __repr__(self):
+        return '<Post %r + %r>' % (self.question, self.answer)
+
+class n2nModel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    story_id = db.Column(db.Integer, db.ForeignKey('story.id'))
+
+    def __repr__(self):
+        return '<Post %r>' % (self.id)
