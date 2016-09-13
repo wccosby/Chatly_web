@@ -1,11 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from models import User, Story, Question, n2nModel
+# from models import User, Story, Question, n2nModel
 
 app = Flask(__name__)
 app.config.from_object('config')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/app.db'
 db = SQLAlchemy(app)
+db.create_all()
 
 ##TODO find a better way to separate this code
 class User(db.Model):

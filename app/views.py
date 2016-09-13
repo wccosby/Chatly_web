@@ -1,56 +1,50 @@
 from flask import Flask, jsonify, request, render_template, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user
+# from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from app import app
-from .forms import LoginForm
-from .models import User, db
+# from .forms import LoginForm
+from app import User, db
 
-from flask_bcrypt import Bcrypt
-login_manager = LoginManager()
-login_manager.init_app(app)
-bcrypt = Bcrypt()
+# from flask_bcrypt import Bcrypt
+# login_manager = LoginManager()
+# login_manager.init_app(app)
+# bcrypt = Bcrypt()
 
-@login_manager.user_loader
-def user_loader(user_id):
-    """Given *user_id*, return the associated User object.
-    :param unicode user_id: user_id (email) user to retrieve
-    """
-    return User.query.get(user_id)
+# @login_manager.user_loader
+# def user_loader(user_id):
+#     """Given *user_id*, return the associated User object.
+#     :param unicode user_id: user_id (email) user to retrieve
+#     """
+#     return User.query.get(user_id)
 
-@login_manager.unauthorized_handler
-def unauthorized_callback():
-    return redirect(url_for("login"))
+# @login_manager.unauthorized_handler
+# def unauthorized_callback():
+#     return redirect(url_for("login"))
 
-
-@app.route('/login', methods=["GET","POST"])
+@app.route('/'   )
+@app.route('/login',methods=["GET","POST"])
 def login():
     """
     For GET requests, display the login form.
     For POSTS, login the current user by processing the form.
     """
-    print db
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.get(form.email.data)
-        if user:
-            if bcrtpt.check_password_has(user.password, form.password.data):
-                user.authenticated = True
-                db.session.add(user)
-                db.session.commit()
-                login_user(user, remember=True)
-                return redirect(url_for("index"))
-    return render_template("login.html",form=form)
+    if request.method == "GET":
+        return render_template("login.html")
+    else:
+        print("tried")
+        result=request.form
+        print("the form: ", result)
+        logged_in=True
+        return redirect(url_for("story"))
 
 # Homepage
-@app.route("/")
-@app.route("/index")
-@login_required
+@app.route("/story")
 def index():
     """
-    Homepage: serve our visualization page, index.html
+    Homepage:   , story.html
     """
-    logged_in=False
-    return render_template('index.html',
+    logged_in=True
+    return render_template('story.html',
                             logged_in=logged_in)
 
 @app.route("/home")
