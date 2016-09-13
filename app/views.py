@@ -1,29 +1,39 @@
 from flask import Flask, jsonify, request, render_template, flash, redirect
-#
-# import tensorflow as tf
-# import numpy as np
-# import pandas as pd
-
-#---------- MODEL IN MEMORY ----------------#
-
-# Read the scientific data on breast cancer survival,
-# Build a LogisticRegression predictor on it
-# patients = pd.read_csv("haberman.data", header=None)
-# patients.columns=['age','year','nodes','survived']
-# patients=patients.replace(2,0)  # The value 2 means death in 5 years
-#
-# X = patients[['age','year','nodes']]
-# Y = patients['survived']
-# PREDICTOR = LogisticRegression().fit(X,Y)
-
-
-#---------- URLS AND WEB PAGES -------------#
-
-# Initialize the app
-# app = Flask(__name__)
-# from app import views
-
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from app import app
+from .forms import LoginForm
+from .models import User, db
+
+from flask_bcrypt import Bcrypt
+login_manager = LoginManager()
+bcrypt = Bcrypt()
+
+@login_manager.user_loader
+def user_loader(user_id):
+    """Given *user_id*, return the associated User object.
+    :param unicode user_id: user_id (email) user to retrieve
+    """
+    return User.query.get(user_id)
+
+@app.route('/login', methods=["GET","POST"])
+def login():
+    """
+    For GET requests, display the login form.
+    For POSTS, login the current user by processing the form.
+    """
+    # print db
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.get(form.email.data)
+        if user:
+            if bcrtpt.check_password_has(user.password, form.password.data):
+                user.authenticated = True
+                db.session.add(user)
+                db.session.commit()
+                login_user(user, remember=True)
+                return redirect(url_for("app.home"))
+    return render_template("login.html",form=form)
 
 # Homepage
 @app.route("/")
@@ -36,10 +46,14 @@ def index():
     return render_template('index.html',
                             logged_in=logged_in)
 
+@app.route("/home")
+def home():
+    return render_template('home.html')
 
-@app.route('/login', methods=['GET','POST'])
-def login():
 
+# @app.route('/login', methods=['GET','POST'])
+# def login():
+#     return render_template('login.html')
 
 # # Get an example and return it's score from the predictor model
 # @app.route("/score/", methods=["POST"])

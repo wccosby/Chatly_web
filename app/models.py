@@ -2,7 +2,7 @@
 
 import datetime
 
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
@@ -31,4 +31,4 @@ class User(db.Model):
 
     def is_anonymous(self):
         """False, as anonymous users aren't supported."""
-return False
+        return False
