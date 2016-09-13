@@ -21,9 +21,11 @@ import pandas as pd
 
 # Initialize the app
 app = Flask(__name__)
+from app import views
 
 # Homepage
 @app.route("/")
+@app.route("/index")
 def index():
     """
     Homepage: serve our visualization page, index.html
@@ -50,5 +52,6 @@ def score():
 #--------- RUN WEB APP SERVER ------------#
 
 # Start the app server
+from app import app
 if __name__ == '__main__':
     app.run(debug=True)
