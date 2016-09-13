@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Upload a story</h2>
+    <form action="#">
+        <div class="file-field input-field">
+            <div class="btn">
+                <span>File</span>
+                <input type="file">
+            </div>
+            <div class="file-path-wrapper">
+                <input class="file-path validate" type="text">
+            </div>
+        </div>
+    </form>
+
+{% endblock %}
+
+
+{% block login %}
+<h2> You need to be logged in </h2>
+{% endblock %}

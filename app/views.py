@@ -1,4 +1,4 @@
-# from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, flash, redirect
 #
 # import tensorflow as tf
 # import numpy as np
@@ -32,7 +32,14 @@ def index():
     """
     Homepage: serve our visualization page, index.html
     """
-    return "hey"
+    logged_in=False
+    return render_template('index.html',
+                            logged_in=logged_in)
+
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+
 
 # # Get an example and return it's score from the predictor model
 # @app.route("/score/", methods=["POST"])
