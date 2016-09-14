@@ -1,20 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="main-container">
-    <h4>Upload a story, {{ name }}</h4>
     <form action="/story" method="Post" enctype=multipart/form-data>
+        <h4>Attach Description</h4>
         <div class="file-field input-field">
             <div class="btn">
-                <span>File</span>
-                <input name="file" type="file">
+                <span>Attach File</span>
+                <input name="story_file" type="file">
             </div>
             <div class="file-path-wrapper">
                 <input class="file-path validate" type="text">
             </div>
         </div>
+
+        <h4>Attach FAQ</h4>
+        <div class="file-field input-field">
+            <div class="btn">
+                <span>Attach File</span>
+                <input name="faq_file" type="file">
+            </div>
+            <div class="file-path-wrapper">
+                <input class="file-path validate" type="text">
+            </div>
+        </div>
+
         <button class="login-submit btn waves-effect waves-light" type="submit" name="action">upload
             <i class="material-icons right">send</i>
         </button>
     </form>
+
 </div>
 {% endblock %}

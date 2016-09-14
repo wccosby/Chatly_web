@@ -3,8 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 # from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from app import app
 # from .forms import LoginForm
-from app import User, Story, db, Question, n2nModel
+# from app import User, Story, db, Question, n2nModel
 import os
+
+from app.database import db_session
+from app.models import User, Story, Question, n2nModel
 
 @app.route('/'   )
 @app.route('/login',methods=["GET","POST"])
@@ -29,8 +32,8 @@ def login():
             # return redirect(url_for("story", userid=user.id, name=user.name))
         else: # user doesnt exist so lets add them to the database
             user = User(name=result['first_name'], email=result['email'], password=result['password'])
-            db.session.add(user)
-            db.session.commit()
+            db_session.add(user)
+            db_session.commit()
             user = User.query.filter_by(email=result['email']).first()
             session['userid'] = user.id
             session['name'] = user.name
@@ -50,11 +53,12 @@ def story():
     else:
         file = request.files.get('file')
         # read this file to the sql database
-        story = Story(story_text=file.read(), user_id=session['userid'])
-        db.session.add(story)
-        db.session.commit()
+        text = unicode(file.read(), "utf-8")
+        story = Story(story_text=text, user_id=session['userid'])
+        db_session.add(story)
+        db_session.commit()
         # get a reference to the story id to pass into the FAQ function
-        story = Story.query.filter_by(user_id=session['userid']).last()
+        story = Story.query.filter_by(user_id=session['userid']).first()
         session['storyid'] = story.id
         return redirect(url_for('questions_page'))
 
