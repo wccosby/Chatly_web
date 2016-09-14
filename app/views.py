@@ -1,25 +1,10 @@
-from flask import Flask, jsonify, request, render_template, flash, redirect, url_for
+from flask import Flask, jsonify, request, render_template, flash, redirect, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 # from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from app import app
 # from .forms import LoginForm
-from app import User, db
-
-# from flask_bcrypt import Bcrypt
-# login_manager = LoginManager()
-# login_manager.init_app(app)
-# bcrypt = Bcrypt()
-
-# @login_manager.user_loader
-# def user_loader(user_id):
-#     """Given *user_id*, return the associated User object.
-#     :param unicode user_id: user_id (email) user to retrieve
-#     """
-#     return User.query.get(user_id)
-
-# @login_manager.unauthorized_handler
-# def unauthorized_callback():
-#     return redirect(url_for("login"))
+from app import User, Story, db, Question, n2nModel
+import os
 
 @app.route('/'   )
 @app.route('/login',methods=["GET","POST"])
@@ -31,21 +16,51 @@ def login():
     if request.method == "GET":
         return render_template("login.html")
     else:
-        print("tried")
         result=request.form
-        print("the form: ", result)
-        logged_in=True
-        return redirect(url_for("story"))
+        print(result['email'])
+        user = User.query.filter_by(email=result['email']).first() # because email is unique
+        # check if user exists
+        if user:
+            print("USER EXISTS!!!")
+            print user.id
+            session['userid'] = user.id
+            session['name'] = user.name
+            return render_template('story.html', userid=user.id, name=user.name)
+            # return redirect(url_for("story", userid=user.id, name=user.name))
+        else: # user doesnt exist so lets add them to the database
+            user = User(name=result['first_name'], email=result['email'], password=result['password'])
+            db.session.add(user)
+            db.session.commit()
+            user = User.query.filter_by(email=result['email']).first()
+            session['userid'] = user.id
+            session['name'] = user.name
+            print("ADDED USER")
+            return render_template('story.html', userid=user.id, name=user.name)
+            # return redirect(url_for("story", userid=user.id, name=user.name))
 
 # Homepage
-@app.route("/story")
-def index():
+@app.route("/story", methods=["GET","POST"])
+def story():
     """
     Homepage:   , story.html
     """
-    logged_in=True
-    return render_template('story.html',
-                            logged_in=logged_in)
+    # print("FROM STORY: ",session['userid'])
+    if request.method == 'GET':
+        return render_template('story.html')
+    else:
+        file = request.files.get('file')
+        # read this file to the sql database
+        story = Story(story_text=file.read(), user_id=session['userid'])
+        db.session.add(story)
+        db.session.commit()
+        # get a reference to the story id to pass into the FAQ function
+        story = Story.query.filter_by(user_id=session['userid']).last()
+        session['storyid'] = story.id
+        return redirect(url_for('questions_page'))
+
+@app.route('/questions_page')
+def questions_page():
+    return render_template('questions_page.html')
 
 @app.route("/home")
 def home():
