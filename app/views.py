@@ -69,8 +69,11 @@ def story():
 def processing_data():
     '''
     needs to associate this specific model with the story id and the user id
-
+    train model
+    save model with associated
+    generate a key to the model (way to load it)
     '''
+    # TODO the code here will access all of the dmn code
     render_template('processing_data.html')
 
 @app.route('/questions_page')
@@ -83,12 +86,12 @@ def home():
 
 
 #TODO implement the api in the route below (right now there is an example right below it that does the stuff)
-@app.rout("/model_pred", methods=['POST'])
+@app.route("/model_pred", methods=['POST'])
 def model_Prediction():
     '''
     Posting sends up an access code, and a question, then gets an answer as a return
     '''
-
+    return "hello world"
 
 
 # # Get an example and return it's score from the predictor model
