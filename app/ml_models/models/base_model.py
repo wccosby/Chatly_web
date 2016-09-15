@@ -39,7 +39,7 @@ class BaseModel(object):
     def train_batch(self, sess, learning_rate, batch, w2v):
         # print("TRYNA TRAIN~~~~~~")
         # print(len(w2v))
-        feed_dict = self._get_feed_dict(batch, w2v)
+        feed_dict = self._get_feed_dict(batch)
         # print("returned feed_dict")
         feed_dict[self.learning_rate] = learning_rate
         # the things in the list specify the commands to run basically
@@ -49,7 +49,7 @@ class BaseModel(object):
 
     def test_batch(self, sess, batch, idx_to_word, w2v):
         actual_batch_size = len(batch[0])
-        feed_dict = self._get_feed_dict(batch, w2v)
+        feed_dict = self._get_feed_dict(batch)
 
 
         actual, predicted, correct_vec, total_loss, summary_str, global_step = \

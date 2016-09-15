@@ -81,19 +81,19 @@ def read_babi_files(file_paths):
     answers = []
 
     # create the w2v dictionary
-    with open('/Users/williamcosby/Documents/metis/Passion_Project_Stratus/data/glove/glove.6B/glove.6B.50d.txt', 'r') as f:
-        content = f.readlines()
+    # with open('/Users/williamcosby/Documents/metis/Passion_Project_Stratus/data/glove/glove.6B/glove.6B.50d.txt', 'r') as f:
+    #     content = f.readlines()
     # content is a list of the word vectors, so need to split each line and get the word
-    w2v_dict = defaultdict(list)
+    # w2v_dict = defaultdict(list)
     # initialize an unkown word at 0s for the size of the embedding dim
-    w2v_dict['<UNK>'] = [0 for i in range(50)]
-    for vec in content:
-        split_vec = vec.split()
-        num_list = []
-        for num in split_vec[1:]:
-            num_list.append(float(num))
-        # vocab_set.add((split_vec[0],num_list))
-        w2v_dict[split_vec[0]] = num_list
+    # w2v_dict['<UNK>'] = [0 for i in range(50)]
+    # for vec in content:
+    #     split_vec = vec.split()
+    #     num_list = []
+    #     for num in split_vec[1:]:
+    #         num_list.append(float(num))
+    #     # vocab_set.add((split_vec[0],num_list))
+    #     w2v_dict[split_vec[0]] = num_list
     # print("WORD2VEC DICT: ", type(w2v_dict))
     # print("WORD2VEC ACCESS: ", w2v_dict['unk'])
 
@@ -102,6 +102,8 @@ def read_babi_files(file_paths):
     # for key in w2v_dict.keys():
     #     vocab_set.add(key)
 
+
+    #TODO switch this...already given the story_text and the faq_text...just need to process those strings
     for file_path in file_paths:
         with open(file_path, 'r') as fh:
             lines = fh.readlines()
@@ -151,22 +153,79 @@ def read_babi_files(file_paths):
     return w2v_dict, vocab_set, paragraphs, questions, answers
 
 
-''' called in return statement of read_babi '''
-def read_babi_split(batch_size, *file_paths_list):
+# ''' called in return statement of read_babi '''
+# def read_babi_split(batch_size, *file_paths_list):
+#     # calls read_babi_files
+#     w2v_dict, vocab_set_list, paragraphs_list, questions_list, answers_list = zip(*[read_babi_files(file_paths) for file_paths in file_paths_list])
+#     vocab_set = vocab_set_list[0]
+#     w2v_dict = w2v_dict[0]
+#     # print("TESTING THE INITIAL ZIP THING: ", type(w2v_dict))
+#     # print(w2v_dict['unk'])
+#     # index as key and word as value
+#     # idx_to_word = dict((k,v) for k, (word, vector) in enumerate(sorted(vocab_set)))
+#     # idx_to_word[0] = "<UNK>"
+#     # word as key and index as value this needs to span the entire word vector set
+#
+#     # need to construct a dictionary of {word: index} and a list of the word vectors as they appear
+#     vocab_map = {}
+#     w2v_vectors = []
+#     idx_to_word = {}
+#     for idx, word in enumerate(sorted(vocab_set)):
+#         # if idx == 0:
+#             # print("WORD TEST: ", word)
+#             # print("type fo w2v_dict: ", type(w2v_dict))
+#             # print("one last test: ", w2v_dict['unk'])
+#         vocab_map[word] = idx
+#         w2v_vectors.append(w2v_dict[word])
+#         idx_to_word[idx] = word
+#     #
+#     # vocab_map = dict((word, k) for k, (word, vector)  in enumerate(sorted(vocab_set))) # this is word -> index (i think) with '<UNK>' as index=0
+#     # vocab_map["<UNK>"] = 0
+#     # print "vocab_size: ",len(vocab_map)
+#     # print idx_to_word
+#
+#
+#     ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
+#     #TODO add the word vector look ups right here...return the vector instead of the index
+#     def _get(vm, w): # w = word, vm = vocabulary_map
+#         if w in vm:
+#             return vm[w]
+#         return 0
+#
+#     ''' this is basically the final step in making the data sets '''
+#     # TODO word2vec or glove vectors here instead of just indices
+#     ## Makes the inputs to the networks
+#     xs_list = [[[[_get(vocab_map, word) for word in sentence] for sentence in paragraph] for paragraph in paragraphs] for paragraphs in paragraphs_list]
+#     qs_list = [[[_get(vocab_map, word) for word in question] for question in questions] for questions in questions_list]
+#     ys_list = [[_get(vocab_map, answer) for answer in answers] for answers in answers_list]
+#
+#     # data sets are now a list of word vectors for the sentences instead of list
+#     # of indices
+#
+#     data_sets = [DataSet(batch_size, list(range(len(xs))), xs, qs, ys)
+#                  for xs, qs, ys in zip(xs_list, qs_list, ys_list)]
+#     # print "datasets: ",len(data_sets)
+#     # just for debugging
+#     for data_set in data_sets:
+#         data_set.vocab_map = vocab_map
+#         data_set.vocab_size = len(vocab_map)
+#     # print "WORD VECTORS!!!!!!!!: ", len(w2v_vectors),len(w2v_vectors[0])
+#     w2v_vectors = np.array(w2v_vectors)
+#     print("VECTOR TYPE: ",type(w2v_vectors))
+#     print("VECTOR TYPE: ",type(w2v_vectors[0][0]))
+#     print("VECTOR SHAPE: ",w2v_vectors.shape)
+#     return data_sets, idx_to_word, np.array(w2v_vectors)
+
+
+def read_train(batch_size, story_text, faq_text):
     # calls read_babi_files
-    w2v_dict, vocab_set_list, paragraphs_list, questions_list, answers_list = zip(*[read_babi_files(file_paths) for file_paths in file_paths_list])
+    vocab_set_list, paragraphs_list, questions_list, answers_list = zip(*[read_babi_files(file_paths) for file_paths in file_paths_list])
     vocab_set = vocab_set_list[0]
-    w2v_dict = w2v_dict[0]
-    # print("TESTING THE INITIAL ZIP THING: ", type(w2v_dict))
-    # print(w2v_dict['unk'])
-    # index as key and word as value
-    # idx_to_word = dict((k,v) for k, (word, vector) in enumerate(sorted(vocab_set)))
-    # idx_to_word[0] = "<UNK>"
-    # word as key and index as value this needs to span the entire word vector set
+    # w2v_dict = w2v_dict[0]
 
     # need to construct a dictionary of {word: index} and a list of the word vectors as they appear
     vocab_map = {}
-    w2v_vectors = []
+    # w2v_vectors = []
     idx_to_word = {}
     for idx, word in enumerate(sorted(vocab_set)):
         # if idx == 0:
@@ -174,14 +233,8 @@ def read_babi_split(batch_size, *file_paths_list):
             # print("type fo w2v_dict: ", type(w2v_dict))
             # print("one last test: ", w2v_dict['unk'])
         vocab_map[word] = idx
-        w2v_vectors.append(w2v_dict[word])
+        # w2v_vectors.append(w2v_dict[word])
         idx_to_word[idx] = word
-    #
-    # vocab_map = dict((word, k) for k, (word, vector)  in enumerate(sorted(vocab_set))) # this is word -> index (i think) with '<UNK>' as index=0
-    # vocab_map["<UNK>"] = 0
-    # print "vocab_size: ",len(vocab_map)
-    # print idx_to_word
-
 
     ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
     #TODO add the word vector look ups right here...return the vector instead of the index
@@ -207,31 +260,9 @@ def read_babi_split(batch_size, *file_paths_list):
     for data_set in data_sets:
         data_set.vocab_map = vocab_map
         data_set.vocab_size = len(vocab_map)
-    # print "WORD VECTORS!!!!!!!!: ", len(w2v_vectors),len(w2v_vectors[0])
-    w2v_vectors = np.array(w2v_vectors)
-    print("VECTOR TYPE: ",type(w2v_vectors))
-    print("VECTOR TYPE: ",type(w2v_vectors[0][0]))
-    print("VECTOR SHAPE: ",w2v_vectors.shape)
-    return data_sets, idx_to_word, np.array(w2v_vectors)
 
+    return data_sets, idx_to_word
 
-''' reading in babi data '''
-def read_babi(batch_size, dir_path, task, suffix=""):
-    prefix = "%s" % str(task)
-    train_file_paths = []
-    test_file_paths = []
-    for file_name in os.listdir(dir_path):
-        file_path = os.path.join(dir_path, file_name)
-        if file_name.startswith(prefix) and file_name.endswith(suffix + "_train.txt"):
-        # if file_name.endswith(suffix + "_train.txt"):
-            train_file_paths.append(file_path)
-        elif file_name.startswith(prefix) and file_name.endswith(suffix + "_test.txt"):
-        # elif file_name.endswith(suffix + "_test.txt"):
-            test_file_paths.append(file_path)
-
-
-    ''' calls read_babi_split '''
-    return read_babi_split(batch_size, train_file_paths, test_file_paths)
 
 
 def split_val(data_set, ratio):

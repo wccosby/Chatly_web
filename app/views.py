@@ -81,7 +81,9 @@ def processing_data():
     story = story_info.story_text
     faq = story_info.faq
 
-    main_models.train_model(story, faq)
+    # Call this to train the model
+    # TODO have some kind of redirect or animation happening while this works
+    main_models.train_model(story, faq, story_info.user_id, story_info.id) # for saving the final model
     print("DONE TRAINING!!") # do a re-direct or something after this!
 
     # provided everything went smoothly then add this to the n2nModel sql table
