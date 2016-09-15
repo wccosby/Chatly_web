@@ -8,6 +8,7 @@ import os
 
 from app.database import db_session
 from app.models import User, Story, n2nModel
+from ml_models import main_models
 
 @app.route('/'   )
 @app.route('/login',methods=["GET","POST"])
@@ -65,7 +66,7 @@ def story():
         return redirect(url_for('processing_data'))
 
 
-@app.route('/processing')
+@app.route('/processing', methods=['POST'])
 def processing_data():
     '''
     needs to associate this specific model with the story id and the user id
@@ -74,7 +75,42 @@ def processing_data():
     generate a key to the model (way to load it)
     '''
     # TODO the code here will access all of the dmn code
-    render_template('processing_data.html')
+
+    # pull the description and the faq from the database and send it to the model for training
+    story_info = Story.query.filter_by(id=session['storyid']).first()
+    story = story_info.story_text
+    faq = story_info.faq
+
+    main_models.train_model(story, faq)
+    print("DONE TRAINING!!") # do a re-direct or something after this!
+
+    # provided everything went smoothly then add this to the n2nModel sql table
+    new_model = n2nModel(user_id=story_info.user_id, story_id=story_info.id,
+                        saved_model_name="",story_info.user_id,"_",story_info.story_id,"")
+
+    return render_template('processing_data.html')
+
+'''
+code for saving/loading specific stuff
+
+
+    def save(self, sess):
+        print("saving model ...")
+        save_path = os.path.join(self.save_dir, "test_save")
+        self.saver.save(sess, save_path, self.global_step)
+
+    def load(self, sess):
+        print("loading model ...")
+        checkpoint = tf.train.get_checkpoint_state(self.save_dir)
+        print "checkpoint: ", checkpoint
+        print checkpoint.model_checkpoint_path
+        try:
+            self.saver.restore(sess, "save/test_save-88")
+        except:
+            print("couldnt load a checkpoint")
+'''
+
+
 
 @app.route('/questions_page')
 def questions_page():

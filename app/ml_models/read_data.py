@@ -1,3 +1,8 @@
+'''
+Reads data from sql data base and formats it appropriately before
+returning it to main.py which then feeds it to the rest of the model
+'''
+
 import os
 import re
 import logging
@@ -5,10 +10,14 @@ from pprint import pprint
 import numpy as np
 from collections import defaultdict
 
+from app.database import db_session
+from app.models import User, Story, n2nModel
+
+
 class DataSet(object):
     def __init__(self, batch_size, idxs, xs, qs, ys, include_leftover=False, name=""):
         # assert len(xs) == len(qs) == len(ys), "X, Q, and Y sizes don't match."
-        print "batch size: ", batch_size
+        # print "batch size: ", batch_size
         assert batch_size <= len(xs), "batch size cannot be greater than data size."
         self.name = name or "dataset"
         self.idxs = idxs

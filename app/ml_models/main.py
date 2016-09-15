@@ -5,10 +5,14 @@ import tensorflow as tf
 # import tensorflow_copy as tf
 
 
+# import read_data
+# import read_data_amazon
 import read_data
-import read_data_amazon
-import read_nonbabi_data
 from models.n2n_DMN.dmn import n2nModel
+
+# this will help with the database connection (pretty sure lol)
+from app.database import db_session
+from app.models import User, Story, n2nModel
 
 flags = tf.app.flags
 
@@ -63,18 +67,9 @@ FLAGS = flags.FLAGS
 def main(_):
     # create train and test data w/ batch_size and task #
     ''' Controls loading the data set and creating the training/testing formats '''
-    if FLAGS.data_group == 'cust':
-        (train_ds, test_ds), idx_to_word, w2v_vectors = read_nonbabi_data.read_babi(1, FLAGS.cust_data_dir, FLAGS.task)
-        train_ds, val_ds = read_nonbabi_data.split_val(train_ds, FLAGS.val_ratio)
-        train_ds.name, val_ds.name, test_ds.name = 'train', 'val', 'test'
-    elif FLAGS.data_group == 'babi':
-        (train_ds, test_ds), idx_to_word = read_data.read_babi(1, FLAGS.data_dir, FLAGS.task)
-        train_ds, val_ds = read_data.split_val(train_ds, FLAGS.val_ratio)
-        train_ds.name, val_ds.name, test_ds.name = 'train', 'val', 'test'
-    else:
-        train_ds, test_ds = read_data_amazon.read_amazon_split(FLAGS.batch_size)
-        train_ds, val_ds = read_data_amazon.split_val_amazon(train_ds, FLAGS.val_ratio)
-        train_ds.name, val_ds.name, test_ds.name = 'train', 'val', 'test'
+    (train_ds, test_ds), idx_to_word, w2v_vectors = read_data.read_babi(1, FLAGS.cust_data_dir, FLAGS.task)
+    train_ds, val_ds = read_data.split_val(train_ds, FLAGS.val_ratio)
+    train_ds.name, val_ds.name, test_ds.name = 'train', 'val', 'test'
 
     FLAGS.vocab_size = test_ds.vocab_size # get the size of the vocabulary
     ##TODO check if get_max_sizes needs to be adjusted to make this all work correctly
