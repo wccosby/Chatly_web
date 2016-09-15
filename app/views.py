@@ -7,7 +7,7 @@ from app import app
 import os
 
 from app.database import db_session
-from app.models import User, Story, Question, n2nModel
+from app.models import User, Story, n2nModel
 
 @app.route('/'   )
 @app.route('/login',methods=["GET","POST"])
@@ -24,8 +24,6 @@ def login():
         user = User.query.filter_by(email=result['email']).first() # because email is unique
         # check if user exists
         if user:
-            print("USER EXISTS!!!")
-            print user.id
             session['userid'] = user.id
             session['name'] = user.name
             return render_template('story.html', userid=user.id, name=user.name)
@@ -51,16 +49,29 @@ def story():
     if request.method == 'GET':
         return render_template('story.html')
     else:
-        file = request.files.get('file')
+        story_file = request.files.get('story_file')
+        faq_file = request.files.get('faq_file')
         # read this file to the sql database
-        text = unicode(file.read(), "utf-8")
-        story = Story(story_text=text, user_id=session['userid'])
+        story_text = unicode(story_file.read(), "utf-8")
+        faq_text = unicode(faq_file.read(), "utf-8")
+        story = Story(story_text=story_text, user_id=session['userid'], faq=faq_text)
         db_session.add(story)
         db_session.commit()
         # get a reference to the story id to pass into the FAQ function
         story = Story.query.filter_by(user_id=session['userid']).first()
         session['storyid'] = story.id
-        return redirect(url_for('questions_page'))
+        # redirect to processing page
+        # return render_template('processing_data.html')
+        return redirect(url_for('processing_data'))
+
+
+@app.route('/processing')
+def processing_data():
+    '''
+    needs to associate this specific model with the story id and the user id
+
+    '''
+    render_template('processing_data.html')
 
 @app.route('/questions_page')
 def questions_page():
@@ -71,9 +82,14 @@ def home():
     return render_template('home.html')
 
 
-# @app.route('/login', methods=['GET','POST'])
-# def login():
-#     return render_template('login.html')
+#TODO implement the api in the route below (right now there is an example right below it that does the stuff)
+@app.rout("/model_pred", methods=['POST'])
+def model_Prediction():
+    '''
+    Posting sends up an access code, and a question, then gets an answer as a return
+    '''
+
+
 
 # # Get an example and return it's score from the predictor model
 # @app.route("/score/", methods=["POST"])
