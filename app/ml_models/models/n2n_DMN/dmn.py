@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from models.base_model import BaseModel
+from app.ml_models.models.base_model import BaseModel
 
 """ Just as a convenient way to pass around things i want to have more attributes but not their own class """
 class Container(object):
@@ -20,7 +20,7 @@ class MemoryLayer(object):
 
         linear_start = params.linear_start # controls if softmaxes are removed initially vs having softmaxes from the beginning
 
-        x_batch, x_mask_aug_batch, m_mask_batch, w2v_b = phs.x_batch, phs.x_mask_aug_batch, phs.m_mask_batch, phs.w2v_b
+        x_batch, x_mask_aug_batch, m_mask_batch = phs.x_batch, phs.x_mask_aug_batch, phs.m_mask_batch
         l_aug_aug = constants.l_aug_aug # positional encoding of input
 
         B, first_u_batch = tensors.B, tensors.first_u_batch # B is query embedding matrix, first_u_batch is first query
@@ -155,7 +155,7 @@ class n2nModel(BaseModel):
             # print "y_batch: ",y_batch
             # print("GOT TO JUST BEFORE W2V PLACEHOLDER IS DECALRED")
             # define word vector matrix placeholder
-            w2v_b = tf.placeholder(tf.float32,shape=[vocab_size,hidden_size], name='w2v')
+            # w2v_b = tf.placeholder(tf.float32,shape=[vocab_size,hidden_size], name='w2v')
 
             # define learning rate
             learning_rate = tf.placeholder('float',name='learning_rate')
@@ -174,8 +174,8 @@ class n2nModel(BaseModel):
             # print "a_batch: ", a_batch
         ## define what happens to the question embedding initially
         with tf.name_scope('first_u'):
-            # B = tf.get_variable('B',dtype='float',shape=[vocab_size,hidden_size])
-            B = tf.identity(w2v_b, name='B')
+            B = tf.get_variable('B',dtype='float',shape=[vocab_size,hidden_size])
+            # B = tf.identity(w2v_b, name='B')
             ## embedding_lookup --> looks up ids in a list of embedding tensors
             # here B is interpreted as a partition of of a larger embedding tensor (which is B)
             # q_batch here contains the ids to be looked up in B
@@ -190,7 +190,7 @@ class n2nModel(BaseModel):
             first_u_batch = tf.reduce_sum(Bq_batch,1,name='first_u') # [batch_size, hidden_size]
 
         placeholders, constants, tensors = Container(), Container(), Container()
-        placeholders.x_batch, placeholders.x_mask_batch, placeholders.x_mask_aug_batch, placeholders.m_mask_batch, placeholders.w2v_b = x_batch, x_mask_batch, x_mask_aug_batch, m_mask_batch, w2v_b
+        placeholders.x_batch, placeholders.x_mask_batch, placeholders.x_mask_aug_batch, placeholders.m_mask_batch = x_batch, x_mask_batch, x_mask_aug_batch, m_mask_batch
         constants.l_aug_aug = l_aug_aug
         tensors.B, tensors.first_u_batch = B, first_u_batch
 
@@ -202,7 +202,7 @@ class n2nModel(BaseModel):
         self.q_mask = q_mask_batch
         self.y = y_batch
         self.learning_rate = learning_rate
-        self.w2v = w2v_b
+        # self.w2v = w2v_b
 
         memory_layers = []
         current_layer = None
@@ -292,7 +292,7 @@ class n2nModel(BaseModel):
     loads the placeholders with data
     note that this is overriding and valled from base_model
     """
-    def _get_feed_dict(self,batch, w2v):
+    def _get_feed_dict(self,batch):
         # print("GET FEED DICT TOTALLY JUST GOT CALLED MOFO")
         # print(len(w2v))
         sent_batch, ques_batch = batch[:2]
@@ -301,7 +301,7 @@ class n2nModel(BaseModel):
         else:
             label_batch = np.zeros([len(sent_batch)])
         # print("about to assign w2v")
-        w2v_b = w2v
+        # w2v_b = w2v
         # print("after assigning w2v")
         # print "XBATCH: ", x_batch[:5]
         # print "WORD@VECASDFASFWEA: ", len(w2v)
@@ -312,7 +312,7 @@ class n2nModel(BaseModel):
         y_batch = self._prepro_label_batch(label_batch)
         # print("processed y_batch")
         feed_dict = {self.x: x_batch, self.x_mask: x_mask_batch, self.m_mask: m_mask_batch,
-                     self.q: q_batch, self.q_mask: q_mask_batch, self.y: y_batch, self.w2v: w2v_b}
+                     self.q: q_batch, self.q_mask: q_mask_batch, self.y: y_batch}
         # print("assigned feed_dict")
         return feed_dict
 

@@ -4,12 +4,13 @@ import numpy as np
 import tensorflow as tf
 import progressbar as pb
 
-from read_data import DataSet
+from app.ml_models.read_data import DataSet
 
 
 class BaseModel(object):
     def __init__(self, graph, params, name=None):
         # print("building base model")
+        print("THE NAME: ", name)
         self.graph = graph
         self.params = params
         self.save_dir = params.save_dir
@@ -36,9 +37,7 @@ class BaseModel(object):
     def _get_feed_dict(self, batch):
         raise Exception("Implement this!")
 
-    def train_batch(self, sess, learning_rate, batch, w2v):
-        # print("TRYNA TRAIN~~~~~~")
-        # print(len(w2v))
+    def train_batch(self, sess, learning_rate, batch):
         feed_dict = self._get_feed_dict(batch)
         # print("returned feed_dict")
         feed_dict[self.learning_rate] = learning_rate
@@ -47,7 +46,7 @@ class BaseModel(object):
         # print("now running the graph")
         return sess.run([self.opt_op, self.merged_summary, self.global_step], feed_dict=feed_dict)
 
-    def test_batch(self, sess, batch, idx_to_word, w2v):
+    def test_batch(self, sess, batch, idx_to_word):
         actual_batch_size = len(batch[0])
         feed_dict = self._get_feed_dict(batch)
 
@@ -67,7 +66,7 @@ class BaseModel(object):
 
         return num_corrects, total_loss, summary_str, global_step
 
-    def train(self, sess, writer, train_data_set, val_data_set, idx_to_word, w2v_vectors):
+    def train(self, sess, writer, train_data_set, val_data_set, idx_to_word):
         # assert isinstance(train_data_set, DataSet)
         # assert isinstance(val_data_set, DataSet)
         params = self.params
@@ -88,21 +87,21 @@ class BaseModel(object):
             for num_batches_completed in range(num_batches):
                 batch = train_data_set.get_next_labeled_batch()
                 ''' calls train_batch '''
-                _, summary_str, global_step = self.train_batch(sess, learning_rate, batch, w2v_vectors)
+                _, summary_str, global_step = self.train_batch(sess, learning_rate, batch)
                 writer.add_summary(summary_str, global_step)
                 pbar.update(num_batches_completed)
             pbar.finish()
             train_data_set.complete_epoch()
 
             if val_data_set and (epoch_idx + 1) % params.val_period == 0:
-                self.eval(sess, train_data_set, idx_to_word, w2v_vectors, is_val=True)
-                self.eval(sess, val_data_set, idx_to_word, w2v_vectors, is_val=True)
+                self.eval(sess, train_data_set, idx_to_word,is_val=True)
+                self.eval(sess, val_data_set, idx_to_word, is_val=True)
 
             if (epoch_idx + 1) % params.save_period == 0:
                 self.save(sess)
         print("training done.")
 
-    def eval(self, sess, eval_data_set, idx_to_word, w2v_vectors, is_val=False):
+    def eval(self, sess, eval_data_set, idx_to_word,is_val=False):
         params = self.params
         print "eval data_set: ", eval_data_set
         num_batches = params.val_num_batches if is_val else params.test_num_batches
@@ -113,7 +112,7 @@ class BaseModel(object):
         pbar.start()
         for num_batches_completed in range(num_batches):
             batch = eval_data_set.get_next_labeled_batch()
-            cur_num_corrects, cur_loss, _, global_step = self.test_batch(sess, batch, idx_to_word, w2v_vectors)
+            cur_num_corrects, cur_loss, _, global_step = self.test_batch(sess, batch, idx_to_word)
             num_corrects += cur_num_corrects
             total += len(batch[0])
             losses.append(cur_loss)
@@ -128,6 +127,7 @@ class BaseModel(object):
     def save(self, sess):
         print("saving model ...")
         save_path = os.path.join(self.save_dir, self.name)
+        print("SAVE PATH: ", save_path)
         self.saver.save(sess, save_path, self.global_step)
 
     def load(self, sess):

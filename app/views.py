@@ -8,7 +8,7 @@ import os
 
 from app.database import db_session
 from app.models import User, Story, n2nModel
-from ml_models import main_models
+from app.ml_models import main_models
 
 @app.route('/'   )
 @app.route('/login',methods=["GET","POST"])
@@ -37,8 +37,8 @@ def login():
             session['userid'] = user.id
             session['name'] = user.name
             print("ADDED USER")
-            return render_template('story.html', userid=user.id, name=user.name)
-            # return redirect(url_for("story", userid=user.id, name=user.name))
+            # return render_template('story.html', userid=user.id, name=user.name)
+            return redirect(url_for("story", userid=user.id, name=user.name))
 
 # Homepage
 @app.route("/story", methods=["GET","POST"])
@@ -66,7 +66,7 @@ def story():
         return redirect(url_for('processing_data'))
 
 
-@app.route('/processing', methods=['POST'])
+@app.route('/processing', methods=['GET'])
 def processing_data():
     '''
     needs to associate this specific model with the story id and the user id
@@ -87,8 +87,9 @@ def processing_data():
     print("DONE TRAINING!!") # do a re-direct or something after this!
 
     # provided everything went smoothly then add this to the n2nModel sql table
-    new_model = n2nModel(user_id=story_info.user_id, story_id=story_info.id,
-                        saved_model_name="",story_info.user_id,"_",story_info.story_id,"")
+    name = ""+str(story_info.user_id)+"_"+str(story_info.id)
+    print("name: ", name)
+    new_model = n2nModel(user_id=story_info.user_id, story_id=story_info.id, saved_model_name=name)
 
     return render_template('processing_data.html')
 

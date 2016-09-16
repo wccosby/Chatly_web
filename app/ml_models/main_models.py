@@ -9,6 +9,7 @@ import tensorflow as tf
 # import read_data_amazon
 import read_data
 from models.n2n_DMN.dmn import n2nModel
+from app.ml_models.read_data import DataSet
 
 # this will help with the database connection (pretty sure lol)
 # from app.database import db_session
@@ -73,6 +74,8 @@ use user_id and story_id to name the final save file so that it can be loaded
 '''
 def train_model(story_text, faq_text, user_id, story_id):
     train_ds, idx_to_word = read_data.read_train(1, story_text, faq_text)
+    print("training dataset: ", train_ds)
+    train_ds = train_ds[0]
     train_ds, val_ds = read_data.split_val(train_ds, FLAGS.val_ratio)
     train_ds.name, val_ds.name = 'train', 'val'
 
@@ -82,10 +85,10 @@ def train_model(story_text, faq_text, user_id, story_id):
     FLAGS.train_num_batches = train_ds.num_batches
     FLAGS.val_num_batches = val_ds.num_batches
     # make a separate save file for each user
-    save_dir = "",FLAGS.save_dir,"_",user_id
-    if not os.path.exists(save_dir)
-        os.mkdir(save_dir)
-
+    save_dir = path = os.path.dirname(os.path.abspath(__file__))+"/save/"+str(user_id)+"_models"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir) # the s for recursive function
+    FLAGS.save_dir = save_dir
     if FLAGS.linear_start:
         FLAGS.num_epochs = FLAGS.ls_num_epochs
         FLAGS.init_lr = FLAGS.ls_init_lr
@@ -100,11 +103,12 @@ def train_model(story_text, faq_text, user_id, story_id):
         FLAGS.save_period = 1
 
     graph = tf.Graph()
-    model = n2nModel(graph, FLAGS)
+    name = ""+str(user_id)+"_"+str(story_id)
+    model = n2nModel(graph, FLAGS, name)
     with tf.Session(graph=graph) as sess:
         sess.run(tf.initialize_all_variables())
         writer = tf.train.SummaryWriter(FLAGS.log_dir, sess.graph)
         if FLAGS.load:
             model.load(sess)
-
+        print("training the model")
         model.train(sess, writer, train_ds, val_ds, idx_to_word)

@@ -14,18 +14,23 @@ import nltk.data
 from app.database import db_session
 from app.models import User, Story, n2nModel
 
+# from app.ml_models.read_data import DataSet
+
 
 class DataSet(object):
-    def __init__(self, batch_size, idxs, xs, qs, ys, include_leftover=False, name=""):
+    def __init__(self, batch_size, idxs, xs, qs, ys, vocab_map, vocab_size, include_leftover=False, name=""):
         # assert len(xs) == len(qs) == len(ys), "X, Q, and Y sizes don't match."
         # print "batch size: ", batch_size
         assert batch_size <= len(xs), "batch size cannot be greater than data size."
         self.name = name or "dataset"
         self.idxs = idxs
+        print("length of idxs: ",len(idxs))
         self.num_examples = len(idxs)
         self.xs = xs
         self.qs = qs
         self.ys = ys
+        self.vocab_map = vocab_map
+        self.vocab_size = vocab_size
         self.num_epochs_completed = 0
         self.idx_in_epoch = 0
         self.batch_size = batch_size
@@ -61,8 +66,8 @@ class DataSet(object):
 def _tokenize_faq(raw_list):
     processed_list = []
 
-    for sent in raw_list
-        tokens = re.findall(r"[\w]+", raw) # finds every word
+    for sent in raw_list:
+        tokens = re.findall(r"[\w]+", sent) # finds every word
         normalized_tokens = [token.lower() for token in tokens]
         processed_list.append(normalized_tokens)
     return processed_list
@@ -73,7 +78,7 @@ returns list of lists where each list is the tokenized version of a sentence
 def _tokenize_story(raw):
 
     sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
-    story_sentences = sent_detector(raw) # returns a list where each element of the list is a story_sentences
+    story_sentences = sent_detector.tokenize(raw) # returns a list where each element of the list is a story_sentences
 
     processed_paragraph = []
     for sentence in story_sentences:
@@ -83,18 +88,27 @@ def _tokenize_story(raw):
 
     return processed_paragraph # list of lists where each list is the tokenized version of a sentence
 
-
-
-_s_re = re.compile("^F:")
-_q_re = re.compile("^Q:")
-_a_re = re.compile("^A:")
-
+# _s_re = re.compile("^F:")
+# _q_re = re.compile("^Q:")
+# _a_re = re.compile("^A:")
 
 '''
 called from read_train
 defines the vocabulary, paragraphs (x input), questions and answers
 '''
 def process_input(story_text, faq_text):
+    print("story text: ", story_text)
+
+    # need to convert to utf-8 and get rid of new lines
+    story_text.decode('utf-8')
+    faq_text.decode('utf-8')
+
+    # getting rid of new lines
+    story_text = story_text.replace("\n", " ")
+    faq_text = faq_text.replace("\n", " ")
+
+    print("story text: ", story_text)
+    print("faq_text: ", faq_text)
 
     vocab_set = set()
     paragraphs = []
@@ -106,7 +120,7 @@ def process_input(story_text, faq_text):
 
     # loading the sentences into the single paragraph representation --> paragraph is then re-used as X for every question/answer pair
     paragraph = _tokenize_story(story_text)
-
+    print("paragraph: ", paragraph)
     # deal with FAQ
     # get lists of all the questions and answers (raw text)
     questions_raw = re.findall(r"(?<=Q:).*?(?=A:)", faq_text)
@@ -129,15 +143,14 @@ def process_input(story_text, faq_text):
         for word in question:
             vocab_set.add(word)
 
-    print("Loaded %d examples from: %s" % (len(questions), os.path.basename(file_path)))
+    print("Loaded %d examples" % (len(questions)))
 
     return vocab_set, paragraph, questions, answers
 
 
 def read_train(batch_size, story_text, faq_text):
     # calls read_babi_files
-    vocab_set_list, paragraphs_list, questions_list, answers_list = process_input(story_text, faq_text)
-    vocab_set = vocab_set_list[0]
+    vocab_set, paragraph, questions, answers = process_input(story_text, faq_text)
     # w2v_dict = w2v_dict[0]
 
     # need to construct a dictionary of {word: index} and a list of the word vectors as they appear
@@ -159,18 +172,21 @@ def read_train(batch_size, story_text, faq_text):
     ''' this is basically the final step in making the data sets '''
     # TODO word2vec or glove vectors here instead of just indices
     ## Makes the inputs to the networks
-    xs_list = [[[[_get(vocab_map, word) for word in sentence] for sentence in paragraph] for paragraph in paragraphs] for paragraphs in paragraphs_list]
-    qs_list = [[[_get(vocab_map, word) for word in question] for question in questions] for questions in questions_list]
-    ys_list = [[_get(vocab_map, answer) for answer in answers] for answers in answers_list]
+    xs_list = [[[[_get(vocab_map, word) for word in sentence] for sentence in paragraph] for i in range(len(questions))]]
+    qs_list = [[[_get(vocab_map, word) for word in question] for question in questions]]
+    ys_list = [[_get(vocab_map, answer) for answer in answers]]
+
+    print("xs_list: ", xs_list)
 
     # data sets are now a list of word vectors for the sentences instead of list
     # of indices
 
-    data_sets = [DataSet(batch_size, list(range(len(xs))), xs, qs, ys)
+    data_sets = [DataSet(batch_size, list(range(len(xs))), xs, qs, ys, vocab_map, len(vocab_map))
                  for xs, qs, ys in zip(xs_list, qs_list, ys_list)]
-    # print "datasets: ",len(data_sets)
+    print "datasets: ",len(data_sets)
     # just for debugging
     for data_set in data_sets:
+        print("adding vocab stuff to the datasets")
         data_set.vocab_map = vocab_map
         data_set.vocab_size = len(vocab_map)
 
@@ -180,8 +196,8 @@ def read_train(batch_size, story_text, faq_text):
 
 def split_val(data_set, ratio):
     end_idx = int(data_set.num_examples * (1-ratio))
-    left = DataSet(data_set.batch_size, list(range(end_idx)), data_set.xs[:end_idx], data_set.qs[:end_idx], data_set.ys[:end_idx])
-    right = DataSet(data_set.batch_size, list(range(len(data_set.xs) - end_idx)), data_set.xs[end_idx:], data_set.qs[end_idx:], data_set.ys[end_idx:])
+    left = DataSet(data_set.batch_size, list(range(end_idx)), data_set.xs[:end_idx], data_set.qs[:end_idx], data_set.ys[:end_idx], data_set.vocab_map, data_set.vocab_size)
+    right = DataSet(data_set.batch_size, list(range(len(data_set.xs) - end_idx)), data_set.xs[end_idx:], data_set.qs[end_idx:], data_set.ys[end_idx:],data_set.vocab_map, data_set.vocab_size)
     return left, right
 
 
