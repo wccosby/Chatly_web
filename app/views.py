@@ -50,6 +50,7 @@ def story():
     if request.method == 'GET':
         return render_template('story.html')
     else:
+        # TODO open the loading modal here
         story_file = request.files.get('story_file')
         faq_file = request.files.get('faq_file')
         # read this file to the sql database
@@ -63,35 +64,36 @@ def story():
         session['storyid'] = story.id
         # redirect to processing page
         # return render_template('processing_data.html')
-        return redirect(url_for('processing_data'))
+        '''
+        needs to associate this specific model with the story id and the user id
+        train model
+        save model with associated
+        generate a key to the model (way to load it)
+        '''
+        # TODO the code here will access all of the dmn code
+
+        # pull the description and the faq from the database and send it to the model for training
+        story_info = Story.query.filter_by(id=session['storyid']).first()
+        story = story_info.story_text
+        faq = story_info.faq
+
+        # Call this to train the model
+        main_models.train_model(story, faq, story_info.user_id, story_info.id) # for saving the final model
+
+        # provided everything went smoothly then add this to the n2nModel sql table
+        name = ""+str(story_info.user_id)+"_"+str(story_info.id)
+        secret_key = os.urandom(24).encode('hex') # generates an access key
+        session['secret_key'] = secret_key
+        new_model = n2nModel(user_id=story_info.user_id, story_id=story_info.id, saved_model_name=name, access_key=secret_key)
+
+        # TODO CLose the loading modal
+        return redirect(url_for('model_ready'))
 
 
-@app.route('/processing', methods=['GET'])
-def processing_data():
-    '''
-    needs to associate this specific model with the story id and the user id
-    train model
-    save model with associated
-    generate a key to the model (way to load it)
-    '''
-    # TODO the code here will access all of the dmn code
+@app.route('/ready', methods=['GET'])
+def model_ready():
 
-    # pull the description and the faq from the database and send it to the model for training
-    story_info = Story.query.filter_by(id=session['storyid']).first()
-    story = story_info.story_text
-    faq = story_info.faq
-
-    # Call this to train the model
-    # TODO have some kind of redirect or animation happening while this works
-    main_models.train_model(story, faq, story_info.user_id, story_info.id) # for saving the final model
-    print("DONE TRAINING!!") # do a re-direct or something after this!
-
-    # provided everything went smoothly then add this to the n2nModel sql table
-    name = ""+str(story_info.user_id)+"_"+str(story_info.id)
-    print("name: ", name)
-    new_model = n2nModel(user_id=story_info.user_id, story_id=story_info.id, saved_model_name=name)
-
-    return render_template('processing_data.html')
+    return render_template('model_ready.html', secret_key=session['secret_key'])
 
 '''
 code for saving/loading specific stuff
@@ -130,6 +132,7 @@ def model_Prediction():
     '''
     Posting sends up an access code, and a question, then gets an answer as a return
     '''
+
     return "hello world"
 
 

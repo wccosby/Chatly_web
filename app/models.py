@@ -74,6 +74,7 @@ class n2nModel(Base):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     story_id = db.Column(db.Integer, db.ForeignKey('story.id'))
     saved_model_name = db.Column(db.Integer)
+    access_key = db.Column(db.String)
 
     def __repr__(self):
         return '<Post %r>' % (self.id)

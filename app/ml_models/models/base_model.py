@@ -128,7 +128,7 @@ class BaseModel(object):
         print("saving model ...")
         save_path = os.path.join(self.save_dir, self.name)
         print("SAVE PATH: ", save_path)
-        self.saver.save(sess, save_path, self.global_step)
+        self.saver.save(sess, save_path) # add self.global_step to add another bit of text to the save file
 
     def load(self, sess):
         print("loading model ...")
