@@ -193,6 +193,79 @@ def read_train(batch_size, story_text, faq_text):
     return data_sets, idx_to_word
 
 
+'''
+called from read_train
+defines the vocabulary, paragraphs (x input), questions and answers
+'''
+def process_input_text(story_text, faq_text, vocab_map, idx_to_word):
+
+    # need to convert to utf-8 and get rid of new lines
+    story_text.decode('utf-8')
+    faq_text.decode('utf-8')
+
+    # getting rid of new lines
+    story_text = story_text.replace("\n", " ")
+    faq_text = faq_text.replace("\n", " ")
+
+    paragraphs = []
+    questions = []
+
+    # NOTE will only have 1 paragraph to train on
+    # TODO explore loading this model from a pre-trained version?
+
+    # loading the sentences into the single paragraph representation --> paragraph is then re-used as X for every question/answer pair
+    paragraph = _tokenize_story(story_text)
+    print("paragraph: ", paragraph)
+    # deal with FAQ
+    # get lists of all the questions and answers (raw text)
+    questions_raw = re.findall(r"(?<=Q:).*?(?=A:)", faq_text)
+    # answers_raw = re.findall(r"(?<=A:).*?(?=Q:|$)", faq_text)
+
+    # tokenize the questions and answers
+    questions = _tokenize_faq(questions_raw) # returns list of lists of tokenized questions
+
+    # get list of answers
+    # for answer in answers_raw:
+    #     answers.append(answer)
+
+    print("Loaded %d examples" % (len(questions)))
+
+    return paragraph, questions
+
+
+def read_test(batch_size, story_text, faq_text, vocab_map, idx_to_word):
+        # calls read_babi_files
+        vocab_set, paragraph, questions, answers = process_input_test(story_text, faq_text, vocab_map, idx_to_word)
+        # w2v_dict = w2v_dict[0]
+
+        ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
+        #TODO add the word vector look ups right here...return the vector instead of the index
+        def _get(vm, w): # w = word, vm = vocabulary_map
+            if w in vm:
+                return vm[w]
+            return 0
+
+        ''' this is basically the final step in making the data sets '''
+        # TODO word2vec or glove vectors here instead of just indices
+        ## Makes the inputs to the networks
+        xs_list = [[[[_get(vocab_map, word) for word in sentence] for sentence in paragraph] for i in range(len(questions))]]
+        qs_list = [[[_get(vocab_map, word) for word in question] for question in questions]]
+        ys_list = [[_get(vocab_map, answer) for answer in answers]]
+
+        # data sets are now a list of word vectors for the sentences instead of list
+        # of indices
+
+        data_sets = [DataSet(batch_size, list(range(len(xs))), xs, qs, ys, vocab_map, len(vocab_map))
+                     for xs, qs, ys in zip(xs_list, qs_list, ys_list)]
+        print "datasets: ",len(data_sets)
+        # just for debugging
+        for data_set in data_sets:
+            print("adding vocab stuff to the datasets")
+            data_set.vocab_map = vocab_map
+            data_set.vocab_size = len(vocab_map)
+
+        return data_sets, idx_to_word
+
 
 def split_val(data_set, ratio):
     end_idx = int(data_set.num_examples * (1-ratio))

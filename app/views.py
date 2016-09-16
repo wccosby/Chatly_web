@@ -132,6 +132,24 @@ def model_Prediction():
     '''
     Posting sends up an access code, and a question, then gets an answer as a return
     '''
+    test_secret_key = "812b42a05c981354f25dbca0720237e95d8c461557a0c82d"
+    example_query = "what color is zubat?"
+
+    # query the database using the secret key to get the name of the model i need to load
+    model = n2nModel.query.filter_by(access_key=test_secret_key).first()
+
+    # get text of the story for the model
+    story_text = Story.query.filter_by(id=model.story_id).first().story_text
+
+    # get path to where the model is stored --> app/ml_models/save/<user_id>_models
+    user_models_path = os.path.dirname(os.path.abspath(__file__))+"/ml_models/save/"+str(model.user_id)+"_models"
+
+    # get the name of the model to load
+    model_to_load = model.saved_model_name
+
+    # call the predict function
+    main_models.get_prediction(story_text, example_query, user_models_path, model_to_load)
+
 
     return "hello world"
 

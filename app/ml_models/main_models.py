@@ -2,6 +2,7 @@ from pprint import pprint
 import os
 
 import tensorflow as tf
+import json # for saving vocabulary dictionaries
 # import tensorflow_copy as tf
 
 
@@ -89,6 +90,18 @@ def train_model(story_text, faq_text, user_id, story_id):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir) # the s for recursive function
     FLAGS.save_dir = save_dir
+
+    # save the vocab_map and idx_to_word so that it can be loaded when its time to predict
+    vocab_save_dir = save_dir + "/vocab"
+    if not os.path.exists(vocab_save_dir):
+        os.makedirs(vocab_save_dir)
+
+    with open(vocab_save_dir+'/vocab_map.json', 'w') as f:
+        json.dump(train_ds.vocab_map, f)
+
+    with open(vocab_save_dir+'/idx_to_word.json','w') as f:
+        json.dump(idx_to_word, f)
+
     if FLAGS.linear_start:
         FLAGS.num_epochs = FLAGS.ls_num_epochs
         FLAGS.init_lr = FLAGS.ls_init_lr
@@ -112,3 +125,7 @@ def train_model(story_text, faq_text, user_id, story_id):
             model.load(sess)
         print("training the model")
         model.train(sess, writer, train_ds, val_ds, idx_to_word)
+
+def get_prediction(story_text, faq_text, user_folder_path, model_to_load):
+
+    pass
