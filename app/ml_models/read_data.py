@@ -197,7 +197,7 @@ def read_train(batch_size, story_text, faq_text):
 called from read_train
 defines the vocabulary, paragraphs (x input), questions and answers
 '''
-def process_input_text(story_text, faq_text, vocab_map, idx_to_word):
+def process_input_predict(story_text, faq_text, vocab_map, idx_to_word):
 
     # need to convert to utf-8 and get rid of new lines
     story_text.decode('utf-8')
@@ -230,12 +230,14 @@ def process_input_text(story_text, faq_text, vocab_map, idx_to_word):
 
     print("Loaded %d examples" % (len(questions)))
 
-    return paragraph, questions
+    #NOTE passing back [['<UNK>']] as the answers list is the hacky workaround for not needing to rewrite anything in the network
+        # and still get a predict pretty easily
+    return paragraph, questions, [['<UNK>']]
 
 
-def read_test(batch_size, story_text, faq_text, vocab_map, idx_to_word):
+def read_predict(batch_size, story_text, faq_text, vocab_map, idx_to_word):
         # calls read_babi_files
-        vocab_set, paragraph, questions, answers = process_input_test(story_text, faq_text, vocab_map, idx_to_word)
+        vocab_set, paragraph, questions, answers = process_input_predict(story_text, faq_text, vocab_map, idx_to_word)
         # w2v_dict = w2v_dict[0]
 
         ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
@@ -255,6 +257,9 @@ def read_test(batch_size, story_text, faq_text, vocab_map, idx_to_word):
         # data sets are now a list of word vectors for the sentences instead of list
         # of indices
 
+        # TODO for predicting, won't be passing in a ys
+        # NOTE could maybe do a hacky workaround by just passing in some random word...we just care about
+            # getting a prediction, not about having super clean code
         data_sets = [DataSet(batch_size, list(range(len(xs))), xs, qs, ys, vocab_map, len(vocab_map))
                      for xs, qs, ys in zip(xs_list, qs_list, ys_list)]
         print "datasets: ",len(data_sets)

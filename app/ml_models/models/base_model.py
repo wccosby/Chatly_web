@@ -124,6 +124,17 @@ class BaseModel(object):
         print("at %d: acc = %.2f%% = %d / %d, loss = %.4f" %
               (global_step, 100 * float(num_corrects)/total, num_corrects, total, loss))
 
+    '''
+    returns the final predicted answer from the network
+    '''
+    def predict_answer(self, sess, eval_data_set, idx_to_word, is_val=False):
+        params = self.params
+        num_batches = 1
+        batch = eval_data_set.get_next_labeled_batch()
+        predicted = self.test_batch(sess, batch, idx_to_word)
+        return predicted
+
+
     def save(self, sess):
         print("saving model ...")
         save_path = os.path.join(self.save_dir, self.name)

@@ -127,5 +127,56 @@ def train_model(story_text, faq_text, user_id, story_id):
         model.train(sess, writer, train_ds, val_ds, idx_to_word)
 
 def get_prediction(story_text, faq_text, user_folder_path, model_to_load):
+    train_ds, idx_to_word = read_data.read_train(1, story_text, faq_text)
+    print("training dataset: ", train_ds)
+    train_ds = train_ds[0]
+    train_ds, val_ds = read_data.split_val(train_ds, FLAGS.val_ratio)
+    train_ds.name, val_ds.name = 'train', 'val'
 
-    pass
+    FLAGS.vocab_size = train_ds.vocab_size
+    FLAGS.max_sent_size, FLAGS.max_ques_size = read_data.get_max_sizes(train_ds, val_ds)
+    FLAGS.max_sent_size = max(FLAGS.max_sent_size, FLAGS.max_ques_size)
+    FLAGS.train_num_batches = train_ds.num_batches
+    FLAGS.val_num_batches = val_ds.num_batches
+    # make a separate save file for each user
+    save_dir = path = os.path.dirname(os.path.abspath(__file__))+"/save/"+str(user_id)+"_models"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir) # the s for recursive function
+    FLAGS.save_dir = save_dir
+
+    # save the vocab_map and idx_to_word so that it can be loaded when its time to predict
+    vocab_save_dir = save_dir + "/vocab"
+    if not os.path.exists(vocab_save_dir):
+        os.makedirs(vocab_save_dir)
+
+    with open(vocab_save_dir+'/vocab_map.json', 'w') as f:
+        json.dump(train_ds.vocab_map, f)
+
+    with open(vocab_save_dir+'/idx_to_word.json','w') as f:
+        json.dump(idx_to_word, f)
+
+    if FLAGS.linear_start:
+        FLAGS.num_epochs = FLAGS.ls_num_epochs
+        FLAGS.init_lr = FLAGS.ls_init_lr
+
+    if FLAGS.draft:
+        FLAGS.num_layers = 1
+        FLAGS.num_epochs = 1
+        FLAGS.eval_period = 1
+        FLAGS.ls_duration = 1
+        FLAGS.train_num_batches = 1
+        FLAGS.test_num_batches = 1
+        FLAGS.save_period = 1
+
+    graph = tf.Graph()
+    name = ""+str(user_id)+"_"+str(story_id)
+    model = n2nModel(graph, FLAGS, name)
+    predicted_answer = ""
+    with tf.Session(graph=graph) as sess:
+        sess.run(tf.initialize_all_variables())
+        model.load(sess)
+        predicted_answer = model.predict_answer(sess, test_ds, idx_to_word)
+
+    # pass the predicted answer back through to the api function
+        # and then pass it again as the response to the api request
+    return predicted_answer
