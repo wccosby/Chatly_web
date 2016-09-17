@@ -132,7 +132,9 @@ def home():
 @app.route("/model_pred", methods=['GET'])
 def model_Prediction():
     '''
-    Posting sends up an access code, and a question, then gets an answer as a return
+    Getting sends up an access code, and a question, then gets an answer as a return
+
+    or Post to keep a record of the interaction
     '''
     test_secret_key = "4de6300b9c66b07c7c2713317551fc1168616669fd75361b"
     example_query = "What color is zubat?"

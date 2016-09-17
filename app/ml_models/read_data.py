@@ -100,9 +100,6 @@ def _tokenize_story(raw):
 
     return processed_paragraph # list of lists where each list is the tokenized version of a sentence
 
-# _s_re = re.compile("^F:")
-# _q_re = re.compile("^Q:")
-# _a_re = re.compile("^A:")
 
 '''
 called from read_train
