@@ -54,9 +54,10 @@ class BaseModel(object):
         actual, predicted, correct_vec, total_loss, summary_str, global_step = \
             sess.run([self.actual,self.predicted, self.correct_vec, self.total_loss, self.merged_summary, self.global_step], feed_dict=feed_dict)
 
+        print(idx_to_word)
         ''' predicted gives the softmax probabilities for all words in the corpus as the answer '''
-        print "PREDICTED: ", predicted, ": ", idx_to_word[predicted[0]]
-        print "ACTUAL: ", actual, ": ", idx_to_word[actual[0]]
+        print "PREDICTED: ", predicted, ": ", idx_to_word[str(predicted[0])]
+        print "ACTUAL: ", actual, ": ", idx_to_word[str(actual[0])]
         # print "correct answer: ", self.correct_vec
         # print "total loss: ", self.total_loss
 
@@ -130,9 +131,15 @@ class BaseModel(object):
     def predict_answer(self, sess, eval_data_set, idx_to_word, is_val=False):
         params = self.params
         num_batches = 1
-        batch = eval_data_set.get_next_labeled_batch()
-        predicted = self.test_batch(sess, batch, idx_to_word)
-        return predicted
+        batch = [eval_data_set.xs, eval_data_set.qs, eval_data_set.ys]
+
+        actual_batch_size = len(batch[0])
+        feed_dict = self._get_feed_dict(batch)
+
+        actual, predicted, correct_vec, total_loss, summary_str, global_step = \
+            sess.run([self.actual,self.predicted, self.correct_vec, self.total_loss, self.merged_summary, self.global_step], feed_dict=feed_dict)
+
+        return idx_to_word[str(predicted[0])]
 
 
     def save(self, sess):

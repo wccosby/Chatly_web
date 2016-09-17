@@ -126,34 +126,40 @@ def train_model(story_text, faq_text, user_id, story_id):
         print("training the model")
         model.train(sess, writer, train_ds, val_ds, idx_to_word)
 
-def get_prediction(story_text, faq_text, user_folder_path, model_to_load):
-    train_ds, idx_to_word = read_data.read_train(1, story_text, faq_text)
-    print("training dataset: ", train_ds)
-    train_ds = train_ds[0]
-    train_ds, val_ds = read_data.split_val(train_ds, FLAGS.val_ratio)
-    train_ds.name, val_ds.name = 'train', 'val'
+def get_prediction(story_text, faq_text, user_id, story_id, user_folder_path, model_to_load):
 
-    FLAGS.vocab_size = train_ds.vocab_size
-    FLAGS.max_sent_size, FLAGS.max_ques_size = read_data.get_max_sizes(train_ds, val_ds)
-    FLAGS.max_sent_size = max(FLAGS.max_sent_size, FLAGS.max_ques_size)
-    FLAGS.train_num_batches = train_ds.num_batches
-    FLAGS.val_num_batches = val_ds.num_batches
-    # make a separate save file for each user
+    # load the right vocab_map and idx_to_word dictionaries from json
+    # save the vocab_map and idx_to_word so that it can be loaded when its time to predict
     save_dir = path = os.path.dirname(os.path.abspath(__file__))+"/save/"+str(user_id)+"_models"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir) # the s for recursive function
     FLAGS.save_dir = save_dir
 
-    # save the vocab_map and idx_to_word so that it can be loaded when its time to predict
     vocab_save_dir = save_dir + "/vocab"
     if not os.path.exists(vocab_save_dir):
         os.makedirs(vocab_save_dir)
 
-    with open(vocab_save_dir+'/vocab_map.json', 'w') as f:
-        json.dump(train_ds.vocab_map, f)
+    with open(vocab_save_dir+'/vocab_map.json', 'r') as f:
+        vocab_map = json.load(f)
 
-    with open(vocab_save_dir+'/idx_to_word.json','w') as f:
-        json.dump(idx_to_word, f)
+    with open(vocab_save_dir+'/idx_to_word.json','r') as f:
+        idx_to_word = json.load(f)
+
+    print("vocab map type:::: ",type(vocab_map))
+    print("idx to word type:::: ",type(idx_to_word))
+
+
+
+    eval_ds, idx_to_word = read_data.read_predict(1, story_text, faq_text, vocab_map, idx_to_word)
+    print("eval dataset: ", eval_ds)
+    eval_ds = eval_ds[0]
+    eval_ds, val_ds = read_data.split_val(eval_ds, FLAGS.val_ratio)
+    eval_ds.name, val_ds.name = 'train', 'val'
+
+    FLAGS.vocab_size = eval_ds.vocab_size
+    FLAGS.max_sent_size, FLAGS.max_ques_size = read_data.get_max_sizes(eval_ds, val_ds)
+    FLAGS.max_sent_size = max(FLAGS.max_sent_size, FLAGS.max_ques_size)
+    FLAGS.train_num_batches = eval_ds.num_batches
+    FLAGS.val_num_batches = val_ds.num_batches
+
 
     if FLAGS.linear_start:
         FLAGS.num_epochs = FLAGS.ls_num_epochs
@@ -175,7 +181,7 @@ def get_prediction(story_text, faq_text, user_folder_path, model_to_load):
     with tf.Session(graph=graph) as sess:
         sess.run(tf.initialize_all_variables())
         model.load(sess)
-        predicted_answer = model.predict_answer(sess, test_ds, idx_to_word)
+        predicted_answer = model.predict_answer(sess, eval_ds, idx_to_word)
 
     # pass the predicted answer back through to the api function
         # and then pass it again as the response to the api request

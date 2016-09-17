@@ -85,6 +85,8 @@ def story():
         secret_key = os.urandom(24).encode('hex') # generates an access key
         session['secret_key'] = secret_key
         new_model = n2nModel(user_id=story_info.user_id, story_id=story_info.id, saved_model_name=name, access_key=secret_key)
+        db_session.add(new_model)
+        db_session.commit()
 
         # TODO CLose the loading modal
         return redirect(url_for('model_ready'))
@@ -127,13 +129,13 @@ def home():
 
 
 #TODO implement the api in the route below (right now there is an example right below it that does the stuff)
-@app.route("/model_pred", methods=['POST'])
+@app.route("/model_pred", methods=['GET'])
 def model_Prediction():
     '''
     Posting sends up an access code, and a question, then gets an answer as a return
     '''
-    test_secret_key = "812b42a05c981354f25dbca0720237e95d8c461557a0c82d"
-    example_query = "what color is zubat?"
+    test_secret_key = "4de6300b9c66b07c7c2713317551fc1168616669fd75361b"
+    example_query = "What color is zubat?"
 
     # query the database using the secret key to get the name of the model i need to load
     model = n2nModel.query.filter_by(access_key=test_secret_key).first()
@@ -146,12 +148,15 @@ def model_Prediction():
 
     # get the name of the model to load
     model_to_load = model.saved_model_name
+    user_id = model.user_id
+    story_id = model.story_id
 
     # call the predict function
-    main_models.get_prediction(story_text, example_query, user_models_path, model_to_load)
+    prediction = main_models.get_prediction(story_text, example_query, user_id, story_id, user_models_path, model_to_load)
 
+    print("from views, ", prediction)
 
-    return "hello world"
+    return prediction
 
 
 # # Get an example and return it's score from the predictor model

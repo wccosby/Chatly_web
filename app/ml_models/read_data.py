@@ -44,9 +44,21 @@ class DataSet(object):
         if self.include_leftover and to > self.num_examples:
             to = self.num_examples
         cur_idxs = self.idxs[from_:to]
+        print("cur_idxs::: ", cur_idxs)
         xs, qs, ys = zip(*[[self.xs[i], self.qs[i], self.ys[i]] for i in cur_idxs])
         self.idx_in_epoch += self.batch_size
         return xs, qs, ys
+
+    # def get_predict_batch(self):
+    #     # assert self.has_next_batch(), "End of epoch. Call 'complete_epoch()' to reset."
+    #     # from_, to = self.idx_in_epoch, self.idx_in_epoch + self.batch_size
+    #     # if self.include_leftover and to > self.num_examples:
+    #     #     to = self.num_examples
+    #     # cur_idxs = self.idxs[from_:to]
+    #     # print("cur_idxs::: ", cur_idxs)
+    #     xs, qs, ys = zip(*[[self.xs[i], self.qs[i], self.ys[i]] for i in range[1]])
+    #     # self.idx_in_epoch += self.batch_size
+    #     return xs, qs, ys
 
     def has_next_batch(self):
         if self.include_leftover:
@@ -215,14 +227,13 @@ def process_input_predict(story_text, faq_text, vocab_map, idx_to_word):
 
     # loading the sentences into the single paragraph representation --> paragraph is then re-used as X for every question/answer pair
     paragraph = _tokenize_story(story_text)
-    print("paragraph: ", paragraph)
     # deal with FAQ
     # get lists of all the questions and answers (raw text)
-    questions_raw = re.findall(r"(?<=Q:).*?(?=A:)", faq_text)
+    # questions_raw = re.findall(r"(?<=Q:).*?(?=A:)", faq_text)
     # answers_raw = re.findall(r"(?<=A:).*?(?=Q:|$)", faq_text)
 
     # tokenize the questions and answers
-    questions = _tokenize_faq(questions_raw) # returns list of lists of tokenized questions
+    questions = _tokenize_faq(faq_text) # returns list of lists of tokenized questions
 
     # get list of answers
     # for answer in answers_raw:
@@ -232,12 +243,12 @@ def process_input_predict(story_text, faq_text, vocab_map, idx_to_word):
 
     #NOTE passing back [['<UNK>']] as the answers list is the hacky workaround for not needing to rewrite anything in the network
         # and still get a predict pretty easily
-    return paragraph, questions, [['<UNK>']]
+    return paragraph, questions, ['<UNK>']
 
 
 def read_predict(batch_size, story_text, faq_text, vocab_map, idx_to_word):
         # calls read_babi_files
-        vocab_set, paragraph, questions, answers = process_input_predict(story_text, faq_text, vocab_map, idx_to_word)
+        paragraph, questions, answers = process_input_predict(story_text, faq_text, vocab_map, idx_to_word)
         # w2v_dict = w2v_dict[0]
 
         ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
