@@ -29,5 +29,36 @@
         </button>
     </form>
 
+    <div id="modal1" class="modal">
+        <h4 class="modal-header">Preparing your model</h4>
+        <div class='container loading'>
+        <div class='loading-overlay'></div>
+        <div class='loading-anim'>
+        <div class='border out'></div>
+        <div class='border in'></div>
+        <div class='border mid'></div>
+        <div class='circle'>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+          <span class='dot'></span>
+        </div>
+        </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    $(".login-submit").click(function(e) {
+        $("#modal1").openModal();
+    });
+</script>
 {% endblock %}

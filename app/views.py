@@ -38,7 +38,7 @@ def login():
             session['name'] = user.name
             print("ADDED USER")
             # return render_template('story.html', userid=user.id, name=user.name)
-            return redirect(url_for("story", userid=user.id, name=user.name))
+            return redirect(url_for("story", userid=user.id, name=user.name, training=False))
 
 # Homepage
 @app.route("/story", methods=["GET","POST"])
