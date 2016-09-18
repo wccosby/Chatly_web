@@ -129,12 +129,20 @@ def home():
 
 
 #TODO implement the api in the route below (right now there is an example right below it that does the stuff)
-@app.route("/model_pred", methods=['GET'])
+
+'''
+request will come in as a json structure:
+{
+    "secret_key": String,
+    "query": string
+}
+'''
+@app.route("/model_pred", methods=['GET', 'POST'])
 def model_Prediction():
     '''
     Getting sends up an access code, and a question, then gets an answer as a return
 
-    or Post to keep a record of the interaction
+    TODO: or Post to keep a record of the interaction
     '''
     test_secret_key = "4de6300b9c66b07c7c2713317551fc1168616669fd75361b"
     example_query = "What color is zubat?"
