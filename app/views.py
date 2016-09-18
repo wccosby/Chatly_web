@@ -144,11 +144,15 @@ def model_Prediction():
 
     TODO: or Post to keep a record of the interaction
     '''
-    test_secret_key = "4de6300b9c66b07c7c2713317551fc1168616669fd75361b"
-    example_query = "What color is zubat?"
+
+    if not request.json or not 'query' in request.json or not 'secret_key' in request.json:
+        abort(400)
+        
+    # test_secret_key = "4de6300b9c66b07c7c2713317551fc1168616669fd75361b"
+    # example_query = "What color is zubat?"
 
     # query the database using the secret key to get the name of the model i need to load
-    model = n2nModel.query.filter_by(access_key=test_secret_key).first()
+    model = n2nModel.query.filter_by(access_key=request.json['secret_key']).first()
 
     # get text of the story for the model
     story_text = Story.query.filter_by(id=model.story_id).first().story_text
@@ -162,7 +166,7 @@ def model_Prediction():
     story_id = model.story_id
 
     # call the predict function
-    prediction = main_models.get_prediction(story_text, example_query, user_id, story_id, user_models_path, model_to_load)
+    prediction = main_models.get_prediction(story_text, request.json['query'], user_id, story_id, user_models_path, model_to_load)
 
     print("from views, ", prediction)
 
