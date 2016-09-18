@@ -143,15 +143,12 @@ def get_prediction(story_text, faq_text, user_id, story_id, user_folder_path, mo
     with open(vocab_save_dir+'/idx_to_word.json','r') as f:
         idx_to_word = json.load(f)
 
-    print "THE QUERY!!!!: ", faq_text
-
 
     eval_ds, idx_to_word = read_data.read_predict(1, story_text, faq_text, vocab_map, idx_to_word)
     print("eval dataset: ", eval_ds)
     eval_ds = eval_ds[0]
     # eval_ds, val_ds = read_data.split_val(eval_ds, FLAGS.val_ratio)
     eval_ds.name = 'train'
-    print("GOT THROUGH IT!!!!!")
     FLAGS.vocab_size = eval_ds.vocab_size
     FLAGS.max_sent_size, FLAGS.max_ques_size = read_data.get_max_sizes(eval_ds)
     FLAGS.max_sent_size = max(FLAGS.max_sent_size, FLAGS.max_ques_size)
