@@ -147,7 +147,7 @@ def model_Prediction():
 
     if not request.json or not 'query' in request.json or not 'secret_key' in request.json:
         abort(400)
-        
+
     # test_secret_key = "4de6300b9c66b07c7c2713317551fc1168616669fd75361b"
     # example_query = "What color is zubat?"
 
@@ -164,13 +164,14 @@ def model_Prediction():
     model_to_load = model.saved_model_name
     user_id = model.user_id
     story_id = model.story_id
+    print("THE API QUERY: ", request.json['query'])
 
     # call the predict function
-    prediction = main_models.get_prediction(story_text, request.json['query'], user_id, story_id, user_models_path, model_to_load)
+    prediction, idx_map = main_models.get_prediction(story_text, request.json['query'], user_id, story_id, user_models_path, model_to_load)
 
-    print("from views, ", prediction)
+    # print("from views, ", prediction)
 
-    return prediction
+    return jsonify({'prediction': prediction.strip(), 'query':request.json['query']}), 201
 
 
 # # Get an example and return it's score from the predictor model

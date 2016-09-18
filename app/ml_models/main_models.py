@@ -143,22 +143,20 @@ def get_prediction(story_text, faq_text, user_id, story_id, user_folder_path, mo
     with open(vocab_save_dir+'/idx_to_word.json','r') as f:
         idx_to_word = json.load(f)
 
-    print("vocab map type:::: ",type(vocab_map))
-    print("idx to word type:::: ",type(idx_to_word))
-
+    print "THE QUERY!!!!: ", faq_text
 
 
     eval_ds, idx_to_word = read_data.read_predict(1, story_text, faq_text, vocab_map, idx_to_word)
     print("eval dataset: ", eval_ds)
     eval_ds = eval_ds[0]
-    eval_ds, val_ds = read_data.split_val(eval_ds, FLAGS.val_ratio)
-    eval_ds.name, val_ds.name = 'train', 'val'
-
+    # eval_ds, val_ds = read_data.split_val(eval_ds, FLAGS.val_ratio)
+    eval_ds.name = 'train'
+    print("GOT THROUGH IT!!!!!")
     FLAGS.vocab_size = eval_ds.vocab_size
-    FLAGS.max_sent_size, FLAGS.max_ques_size = read_data.get_max_sizes(eval_ds, val_ds)
+    FLAGS.max_sent_size, FLAGS.max_ques_size = read_data.get_max_sizes(eval_ds)
     FLAGS.max_sent_size = max(FLAGS.max_sent_size, FLAGS.max_ques_size)
     FLAGS.train_num_batches = eval_ds.num_batches
-    FLAGS.val_num_batches = val_ds.num_batches
+    # FLAGS.val_num_batches = val_ds.num_batches
 
 
     if FLAGS.linear_start:
@@ -181,8 +179,8 @@ def get_prediction(story_text, faq_text, user_id, story_id, user_folder_path, mo
     with tf.Session(graph=graph) as sess:
         sess.run(tf.initialize_all_variables())
         model.load(sess)
-        predicted_answer = model.predict_answer(sess, eval_ds, idx_to_word)
+        predicted_answer, idx_map = model.predict_answer(sess, eval_ds, idx_to_word)
 
     # pass the predicted answer back through to the api function
         # and then pass it again as the response to the api request
-    return predicted_answer
+    return predicted_answer, idx_map

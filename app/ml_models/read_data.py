@@ -21,10 +21,11 @@ class DataSet(object):
     def __init__(self, batch_size, idxs, xs, qs, ys, vocab_map, vocab_size, include_leftover=False, name=""):
         # assert len(xs) == len(qs) == len(ys), "X, Q, and Y sizes don't match."
         # print "batch size: ", batch_size
+        print "DATA SET LENGTHS~~~~~: ", len(xs)," ", len(qs), " ", len(ys)
         assert batch_size <= len(xs), "batch size cannot be greater than data size."
         self.name = name or "dataset"
         self.idxs = idxs
-        print("length of idxs: ",len(idxs))
+        # print("length of idxs: ",len(idxs))
         self.num_examples = len(idxs)
         self.xs = xs
         self.qs = qs
@@ -44,7 +45,7 @@ class DataSet(object):
         if self.include_leftover and to > self.num_examples:
             to = self.num_examples
         cur_idxs = self.idxs[from_:to]
-        print("cur_idxs::: ", cur_idxs)
+        # print("cur_idxs::: ", cur_idxs)``
         xs, qs, ys = zip(*[[self.xs[i], self.qs[i], self.ys[i]] for i in cur_idxs])
         self.idx_in_epoch += self.batch_size
         return xs, qs, ys
@@ -77,11 +78,12 @@ class DataSet(object):
 
 def _tokenize_faq(raw_list):
     processed_list = []
-
+    print "RAW LIST!!: ", raw_list
     for sent in raw_list:
         tokens = re.findall(r"[\w]+", sent) # finds every word
         normalized_tokens = [token.lower() for token in tokens]
         processed_list.append(normalized_tokens)
+    print "PROCESSED_LIST!!!!!: :", processed_list
     return processed_list
 
 '''
@@ -95,10 +97,11 @@ def _tokenize_story(raw):
     processed_paragraph = []
     for sentence in story_sentences:
         tokens = re.findall(r"[\w]+", sentence) # finds every word
-        normalized_tokens = [token.lower() for token in tokens]
+        normalized_tokens = [token.lower().strip() for token in tokens]
         processed_paragraph.append(normalized_tokens)
 
     return processed_paragraph # list of lists where each list is the tokenized version of a sentence
+
 
 
 '''
@@ -106,7 +109,7 @@ called from read_train
 defines the vocabulary, paragraphs (x input), questions and answers
 '''
 def process_input(story_text, faq_text):
-    print("story text: ", story_text)
+    # print("story text: ", story_text)
 
     # need to convert to utf-8 and get rid of new lines
     story_text.decode('utf-8')
@@ -116,8 +119,8 @@ def process_input(story_text, faq_text):
     story_text = story_text.replace("\n", " ")
     faq_text = faq_text.replace("\n", " ")
 
-    print("story text: ", story_text)
-    print("faq_text: ", faq_text)
+    # print("story text: ", story_text)
+    # print("faq_text: ", faq_text)
 
     vocab_set = set()
     paragraphs = []
@@ -129,7 +132,7 @@ def process_input(story_text, faq_text):
 
     # loading the sentences into the single paragraph representation --> paragraph is then re-used as X for every question/answer pair
     paragraph = _tokenize_story(story_text)
-    print("paragraph: ", paragraph)
+    # print("paragraph: ", paragraph)
     # deal with FAQ
     # get lists of all the questions and answers (raw text)
     questions_raw = re.findall(r"(?<=Q:).*?(?=A:)", faq_text)
@@ -141,16 +144,16 @@ def process_input(story_text, faq_text):
     # get list of answers
     for answer in answers_raw:
         vocab_set.add(answer)
-        answers.append(answer)
+        answers.append(answer.replace(" ",""))
 
     # build the vocabulary
     for sentence in paragraph:
         for word in sentence:
-            vocab_set.add(word)
+            vocab_set.add(word.replace(" ",""))
 
     for question in questions:
         for word in question:
-            vocab_set.add(word)
+            vocab_set.add(word.replace(" ",""))
 
     print("Loaded %d examples" % (len(questions)))
 
@@ -171,6 +174,7 @@ def read_train(batch_size, story_text, faq_text):
         # w2v_vectors.append(w2v_dict[word])
         idx_to_word[idx] = word
 
+    # print("VOCAB MAP: ", vocab_map)
     ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
     #TODO add the word vector look ups right here...return the vector instead of the index
     def _get(vm, w): # w = word, vm = vocabulary_map
@@ -185,7 +189,7 @@ def read_train(batch_size, story_text, faq_text):
     qs_list = [[[_get(vocab_map, word) for word in question] for question in questions]]
     ys_list = [[_get(vocab_map, answer) for answer in answers]]
 
-    print("xs_list: ", xs_list)
+    # print("xs_list: ", xs_list)
 
     # data sets are now a list of word vectors for the sentences instead of list
     # of indices
@@ -230,7 +234,7 @@ def process_input_predict(story_text, faq_text, vocab_map, idx_to_word):
     # answers_raw = re.findall(r"(?<=A:).*?(?=Q:|$)", faq_text)
 
     # tokenize the questions and answers
-    questions = _tokenize_faq(faq_text) # returns list of lists of tokenized questions
+    questions = _tokenize_faq([faq_text]) # returns list of lists of tokenized questions
 
     # get list of answers
     # for answer in answers_raw:
@@ -247,7 +251,7 @@ def read_predict(batch_size, story_text, faq_text, vocab_map, idx_to_word):
         # calls read_babi_files
         paragraph, questions, answers = process_input_predict(story_text, faq_text, vocab_map, idx_to_word)
         # w2v_dict = w2v_dict[0]
-
+        # print("VOCAB MAP: ", vocab_map)
         ''' get the index of the word, return index for <UNK> token if word is not in the vocabulary '''
         #TODO add the word vector look ups right here...return the vector instead of the index
         def _get(vm, w): # w = word, vm = vocabulary_map
@@ -270,10 +274,9 @@ def read_predict(batch_size, story_text, faq_text, vocab_map, idx_to_word):
             # getting a prediction, not about having super clean code
         data_sets = [DataSet(batch_size, list(range(len(xs))), xs, qs, ys, vocab_map, len(vocab_map))
                      for xs, qs, ys in zip(xs_list, qs_list, ys_list)]
-        print "datasets: ",len(data_sets)
+        # print "datasets: ",len(data_sets)
         # just for debugging
         for data_set in data_sets:
-            print("adding vocab stuff to the datasets")
             data_set.vocab_map = vocab_map
             data_set.vocab_size = len(vocab_map)
 
