@@ -134,7 +134,6 @@ class BaseModel(object):
         params = self.params
         num_batches = 1
         batch = [eval_data_set.xs, eval_data_set.qs, eval_data_set.ys]
-        print("EVAL DATA SET QUESTION: ", eval_data_set.qs)
 
         actual_batch_size = len(batch[0])
         feed_dict = self._get_feed_dict(batch)
